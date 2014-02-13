@@ -4,30 +4,49 @@
 
 int main(int argc, char * * argv)
 {
-  int ind;
-  //int num;
-  int invert = 0;
-  int line = 0;
+  int ind =0;
   int quiet = 0;
-  FILE *f;
-  const char * buffer[2000];
-  int * ptr;
-  for(ind=0;ind<argc;ind++)
+  int invert=0;
+  FILE * f;
+  char* buffer;
+  int count =1;
+  int end=1;
+
+    for(ind=0;ind<(argc-1);ind++)
+      {
+	
+	if((strcmp(argv[ind], "-q")==0) || (strcmp(argv[ind],"--quiet")==0))
+	  {
+	    quiet = 1; 
+	  }
+
+	if(argv[argc-1][0]=='-')
+	  {
+	    fprintf(stderr,"last argument begins with -  ");
+	    return 2;
+	    
+	  }
+      }
+    for(ind=1;ind<(argc-2);ind++)
+      {
+	if((strcmp(argv[ind],"-v")!=0)&&(strcmp(argv[ind],"-n")!=0) &&(strcmp(argv[ind],"-q")!=0) &&(strcmp(argv[ind],"--invert-match")!=0) &&(strcmp(argv[ind],"--line-number")!=0)&&(strcmp(argv[ind],"--quiet")!=0))
 	{
-	  if((strcmp(argv[ind],"-q")==1)||(strcmp(argv[ind],"--quiet")==1))
-	    {
-	      quiet = 1; 
-	    }
+	  fprintf(stderr,"incorrect argument\n");
+	  return 2;
 	}
-  for(ind=0;ind<(argc);ind++)
+	  
+	  
+      }
+      
+     for(ind=0;ind<(argc);ind++)
     {
-      if( strcmp(argv[ind],"--help")==1)
+      if( strcmp(argv[ind],"--help")==0)
 	{
 	  if(quiet==0)
 	    {
-	      printf("-v --invert-match select non-matching lines\n");
-	      printf("-n, --line-number    print line numbers with output\n");
-	      printf("-q, --quiet         suppress all output\n");
+	      printf("\n-v, --invert-match   select non-matching lines\n");
+	      printf("\n-n, --line-number    print line numbers with output\n");
+	      printf("\n-q, --quiet          suppress all output\n\n");
 	    }
 	  return EXIT_SUCCESS;
 	}
@@ -37,29 +56,70 @@ int main(int argc, char * * argv)
 	  invert = 1;
 	}
     }
-      
-
-  if(invert==0)
+       if(argc==1)
     {
-      f = fopen(argv[argc-2],"r");
+      if(quiet ==0)
+	{
+	  printf("Not enough arguments!\n");
+	}
+      return EXIT_FAILURE;
+    }
+     
+     if(invert==0)
+    {
+     
+      f=fopen(argv[argc-2],"r");
       if(f==NULL)
 	{
-	  fprintf(stderr, "This is input is bogus!");
+	  fprintf(stderr,"invalid argument");
 	  return 2;
 	}
-      while(fgets(buffer,2000,f)!=NULL)
+      buffer =malloc(sizeof(char)*2000);
+      while(!feof(f))
 	{
-	  ptr = strstr((const)argv[argc-1],buffer);
-	  if(ptr!=NULL)
+	  if(fgets(buffer,2000,f)!=NULL)
 	    {
-	      for(ind=0;ind<2000;ind++)
+	      if(strstr(buffer,argv[argc-1])!=NULL)
 		{
-		  printf("%s",buffer[ind]);
-		  printf("\n");
+		  if(quiet==0)
+		    {
+		      end=0;
+		      printf("%d     ",count);
+		      printf("%s",buffer);
+		      printf("\n");
+		    }
+		   
 		}
-       	}
+	      count++;
+	      
+	    }
 	}
+      free(buffer);
     }
+     if(invert==1)
+       {
+	  f=fopen(argv[argc-2],"r");
+      buffer =malloc(sizeof(char)*2000);
+      while(!feof(f))
+	{
+	  if(fgets(buffer,2000,f)!=NULL)
+	    {
+	      if(strstr(buffer,argv[argc-1])==NULL)
+		{
+		  if(quiet==0)
+		    {
+		      end=0;
+		      printf("%d",count);
+		      printf("%s",buffer);
+		      printf("\n");
+		    }
+		}
+	      count++;
+	    }
+	}
+      free(buffer); 
+       }
 
-      return EXIT_SUCCESS;
- }
+ 
+  return end;
+}
