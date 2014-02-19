@@ -20,7 +20,9 @@ Image * Image_load(const char * filename);
   ImageHeader  header;
   size_t read;
   int error = FALSE;
+  
 
+  
   if(!error)
     {
       f=fopen("filename","rb");
@@ -31,7 +33,7 @@ Image * Image_load(const char * filename);
       error=TRUE;
     }
 
-
+  //read header
   if(!error)
     {
       read = fread(&header,sizeof(ImageHeader),1,f);
@@ -42,6 +44,45 @@ Image * Image_load(const char * filename);
 	}
     }
   
+  if(!error)
+    {
+      if(header->magic_number != ECE_IMAGE_MAGIC_NUMBER )
+	{
+	  error = TRUE;
+	}
+    }
+
+
+  if(!error)
+    {
+      if(header->width == 0)
+	{
+	  error = TRUE;
+	}
+    }
+
+
+
+  if(!error)
+    {
+      if(header->height==0)
+	{
+	  error = TRUE;
+	}
+    }
+
+
+  if(!error)
+    {
+      if(header.comment_length==0)
+	{
+	  error = TRUE;
+	}
+    }
+
+
+
+
 
   if(!error)
     {
@@ -55,44 +96,15 @@ Image * Image_load(const char * filename);
   
   if(!error)
     {
-      //im1->width = image_264.width;
-      //im1->height = image_264.height;
-     
-      char* f_copy=strdup(f);
-      if(f_copy[0]!=ECE264_IMAGE_MAGIC_NUMBER)
-	{
-	  fprintf(stderr,"Incorrect Magic Number");
-	  error = TRUE;
-	}
-      else
-	{
-	  im1.magic_number = f_copy[0];  
-	}
+      im1->width = image_264.width;
+      im1->height = image_264.height;
+      if
       
+       
     }
- 
-  if(!error)
-    {
-      if((f_copy[1] * f_copy[2] )==0)
-	{
-	  fprintf(stderr,"Error:length x Width = 0");
-	  error = TRUE;
-	}
-      else
-	{
-	  im1.width = f_copy[1];
-	  im1.length = f_copy[2];
-	}
-    }
+
   
-  if(!error)
-    {
-      if(f_copy[3]<2)
-	{
-	  fprintf(stderr,"Length of comment is not long enough");
-	  error=TRUE;  
-	}   
-    }
+
 
  
   
