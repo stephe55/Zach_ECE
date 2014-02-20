@@ -1,10 +1,13 @@
 #include "answer05.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <libgen.h>
 
 #define FALSE 0
 #define TRUE 1
+#define ECE264_IMAGE_MAGIC_NUMBER 0x21343632
+
 
 /**
  * Loads an ECE264 image file, returning an Image structure.
@@ -12,23 +15,23 @@
  *
  * Hint: Please see the README for extensive hints
  */
-Image * Image_load(const char * filename);
+Image * Image_load(const char * filename)
 {
   FILE * f = NULL; 
   Image * im1 = NULL;
-  char* comment = NULL;
+  // char* comment = NULL;
   ImageHeader  header;
   size_t read;
   int error = FALSE;
-  
-
+  int len;
+  int test;
   
   if(!error)
     {
       f=fopen("filename","rb");
       if(!f)
 	{
-	  fprintf(stderr,"Unable to open file '%s', filename\n");
+	  fprintf(stderr,"Unable to open file '%s', filename\n",filename);
 	}
       error=TRUE;
     }
@@ -39,14 +42,15 @@ Image * Image_load(const char * filename);
       read = fread(&header,sizeof(ImageHeader),1,f);
       if(read!=1)
 	{
-	  fprintf(stderr,"Failed to read header");
+	  fprintf(stderr,"Failed to read header of %s \n",filename);
 	  error = TRUE;
 	}
     }
   
   if(!error)
     {
-      if(header->magic_number != ECE_IMAGE_MAGIC_NUMBER )
+      test = header.magic_number;
+      if(test != ECE264_IMAGE_MAGIC_NUMBER )
 	{
 	  error = TRUE;
 	}
@@ -55,7 +59,8 @@ Image * Image_load(const char * filename);
 
   if(!error)
     {
-      if(header->width == 0)
+      test = header.width;
+      if(test < 1)
 	{
 	  error = TRUE;
 	}
@@ -65,7 +70,8 @@ Image * Image_load(const char * filename);
 
   if(!error)
     {
-      if(header->height==0)
+      test = header.height;
+      if(test < 1)
 	{
 	  error = TRUE;
 	}
@@ -74,16 +80,15 @@ Image * Image_load(const char * filename);
 
   if(!error)
     {
-      if(header.comment_length==0)
+      test = header.comment_len;
+      if(test < 1)
 	{
 	  error = TRUE;
 	}
     }
 
 
-
-
-
+  //allocate image struct
   if(!error)
     {
       im1 = malloc(sizeof(Image));
@@ -93,16 +98,25 @@ Image * Image_load(const char * filename);
 	  error = TRUE;
 	}
     }
-  
+
+
+  //comment memory allocation
   if(!error)
     {
-      im1->width = image_264.width;
-      im1->height = image_264.height;
-      if
-      
+      im1->width = header.width;
+      im1->height = header.height;
+      len = header.comment_len;
+      im1->comment = malloc(sizeof(char)*(len+1));//should use size char and len header.comment?
+	if(im1->comment==NULL)
+	  {
+	    fprintf(stderr,"Failed to allocate memory for comment");
+	    error = TRUE;
+	  }
        
     }
 
+  //read pixel data
+  read = fread();
   
 
 
@@ -123,7 +137,7 @@ Image * Image_load(const char * filename);
  *
  * Hint: Please see the README for extensive hints
  */
-int Image_save(const char * filename, Image * image);
+int Image_save(const char * filename, Image * image)
 {
   
 }
@@ -136,14 +150,21 @@ int Image_save(const char * filename, Image * image);
  * you do not write this function correctly, then valgrind will 
  * report an error. 
  */
-void Image_free(Image * image);
+void Image_free(Image * image)
 {
+  if(image != NULL)
+    {
+      free(image->comment);
+      free(image->data);
+      free(image);
+
+    }
   
 }
 /**
  * Performs linear normalization, see README
  */
-void linearNormalization(int width, int height, uint8_t * intensity);
+void linearNormalization(int width, int height, uint8_t * intensity)
 {
   
 }
