@@ -19,7 +19,7 @@ Image * Image_load(const char * filename)
 {
   FILE * f = NULL; 
   Image * im1 = NULL;
-  // char* comment = NULL;
+  Image * im2 = NULL;
   ImageHeader  header;
   size_t read;
   int error = FALSE;
@@ -65,8 +65,7 @@ Image * Image_load(const char * filename)
 	  error = TRUE;
 	}
     }
-
-
+  
 
   if(!error)
     {
@@ -112,36 +111,127 @@ Image * Image_load(const char * filename)
 	    fprintf(stderr,"Failed to allocate memory for comment");
 	    error = TRUE;
 	  }
-       
+	else
+	  {
+	    read =fread(im1->comment,sizeof(char),header.comment_len,f);
+	    if(read != header.comment_len)
+	      {
+		fprintf(stderr,"The comment was not read successfully");
+	      }
+	  }
     }
 
-  //read pixel data
-  read = fread();
-  
 
 
+  if(!error)
+    {//allocate memory for pixel data
+      im1->data = malloc(sizeof(char)*(header.height*header.width+1));
+      if(im1->data ==NULL)
+	{
+	  fprintf(stderr,"Failed to allocate memory for pixel data");
+	  error=TRUE;
+	}
+      else
+	{//read 
+	  read = fread(im1->data,sizeof(char),header.height*header.width+1,f);
+	}
+    }
+
+  if(!error)
+    {
+      if(read != (header.height*header.width+1))
+	{
+	  fprintf(stderr,"data was not read successfully");
+	  error = TRUE;
+	}
+    }
  
+  if(!error)
+    {
+      im2 = im1;
+      im1=NULL;
+    }
   
+  if(im1 != NULL)
+    {
+      free(im1->comment);
+      free(im1->data);
+      free(im1);
+    }
 
 
-
-
-
-
-
-
+  if(f)
+    {
+      fclose(f);
+    }
+  
+  return im2;
 }
 /**
  * Save an image to the passed filename, in ECE264 format.
  * Return TRUE if this succeeds, or FALSE if there is any error.
  *
  * Hint: Please see the README for extensive hints
- */
+ */ 
 int Image_save(const char * filename, Image * image)
 {
+  int error = FALSE;
+  int len = 0;
+  FILE * f;
+  size_t edgar = 0;
+  ImageHeader header;
+  // char * buffer;
+
+  f=fopen(filename, "wb");
+  if(f==NULL)
+    {
+      fprintf(stderr,"Failed to open '%s' for writing\n",filename);
+      return FALSE;
+    }
   
+  header.magic_number = ECE264_IMAGE_MAGIC_NUMBER;
+  header.width = image->width;
+  header.height = image-> height;
+  header.comment_len=strlen(image->comment);
+  
+  //write header
+  edgar = fwrite(&header, sizeof(ImageHeader),1,f);
+  if(edgar != 1)
+    {
+      fprintf(stderr,"Unable to write header");
+      error = TRUE;
+    }
+  
+
+  if(!error)
+    {
+      len= header.comment_len;
+      edgar = fwrite(image->comment,sizeof(char)*(len),1,f);//write from comment?
+      if(edgar != 1)
+	{
+	  fprintf(stderr,"Failed to write comment");
+	  error = TRUE;
+	}
+    }
+  
+  if(!error)
+    {
+      edgar = fwrite(image->data,sizeof(char),image->width*image->height+1,f);
+      if(edgar != (image->width*image->height + 1))
+	{
+	  fprintf(stderr,"Failed to write pixel data");
+	}
+    }
+  
+  if(f)
+    {
+      fclose(f);
+    }
+  
+  return !error;
+
 }
-/**
+/*
  * Free memory for an image structure
  *
  * Image_load(...) (above) allocates memory for an image structure. 
@@ -161,10 +251,11 @@ void Image_free(Image * image)
     }
   
 }
-/**
- * Performs linear normalization, see README
- */
+/*
+* Performs linear normalization, see README
+*/ 
 void linearNormalization(int width, int height, uint8_t * intensity)
 {
   
 }
+
