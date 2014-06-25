@@ -2,57 +2,31 @@
 #include <string.h>
 #include <stdio.h>
 
+
+int comp2(const void* x,const void* y);
+int compchar(const void* x,const void* y);
+
 char * strcat_ex(char * * dest, int * n, const char * src)
 {
-  int len1;
-  int len2;
-  if((src==NULL)&(*dest == NULL))
+  int len1 = (*dest == NULL) ? 0 : strlen(*dest);
+  int len2 = strlen(src);
+ 
+  if((*dest == NULL) || (*n<(len1+len2+1)))
     {
-      return NULL;
+      *n=1+2*(len1+len2);
+      char* buffer = malloc(sizeof(char)*(*n));
+      buffer[0]='\0';
+      if(*dest) {
+	strcpy(buffer,*dest);
+	free(*dest);
+      }
+      *dest = buffer;
     }
-  else if((src==NULL)&(*dest != NULL))
-    {
-      return *dest;
-    }
-  else
-    {
-      if((*dest != NULL) & (src != NULL))
-	{
-	  len1 = strlen(*dest);
-	  len2 = strlen(src);
-	}
-      if((*dest == NULL) || (*n<(len1+len2+1)) )
-	{
-	  char* buffer;
-	  if((*dest != NULL))
-	    {
-	      len1=strlen(*dest);
-	      len2=strlen(src);
-	      buffer = malloc(sizeof(char)*(1+2*(len1+len2)));
-	      *n=2*(strlen(*dest)+strlen(src));
-	      buffer[0]='\0';
-	      buffer = strcpy(buffer,*dest);
-	      *dest = buffer;
-	      *dest = strcat(*dest,src);
-	    }
-	  else
-	    {
-	      len2=strlen(src);
-	      buffer = malloc(sizeof(char)*(1+2*len2));
-	      *n=2*(strlen(src));
-	      buffer[0]='\0';
-	      *dest=buffer;
-	      *dest=strcat(*dest,src);
-	    }
-      
-	}
-      else
-	{
-	  *dest = strcat(*dest,src);
-	}
+  
+  *dest = strcat(*dest,src);      
 
-      return *dest;
-    } 
+  return *dest;
+     
 }
 
 
@@ -65,13 +39,13 @@ char * * explode(const char * str, const char * delims, int * arrLen)
   int increment;
   int* dlmary;
   int ndx;
-  printf("str is %s\n", str);
-  printf("the length of str is %d\n", *arrLen);
+  int Len;
   i=0;
   i2=0;
   increment=0;
   dnum=0;
   //for loop that counts number of delims (dnum) in str
+  Len =strlen(str);
   while(str[i] != '\0')
     {
       i2=0;
@@ -90,20 +64,24 @@ char * * explode(const char * str, const char * delims, int * arrLen)
 	}
       i++;
     }
-  printf("number of delims = %d\n", dnum);
+
+  *arrLen=dnum+1;
+  printf("the number of strings %d\n",*arrLen);
+
   strArr=malloc(sizeof(char*)*(dnum+1));///memory error will need to free in main
+
+
   //statement for zero delimeters
    if(dnum==0)
   {
     printf("DNUM == ZERO\n");
-    strArr[0]=malloc(sizeof(char)*(*arrLen+1));////////MEMORYERROR/////
+    strArr[0]=malloc(sizeof(char)*(Len+1));////////MEMORYERROR/////
     strArr[0]=strcpy(strArr[0],str);
-    // printf("the length of strArr[0] is %d\n", strlen(strArr[0]));
     return strArr;
   }
-  //malloc dlmary(dnum ) for indexes of delims
+
   dlmary=malloc(sizeof(int)*(dnum));
-  //dlmary[0]=0 dlmary  dlmary[12]=arrLen
+
   i=0;
   i2=0;
   ndx = 0; 
@@ -129,27 +107,26 @@ char * * explode(const char * str, const char * delims, int * arrLen)
       i++;
     }
 
-  //for loop i= 1 to i <arrLen placing delimiter indexes in dlmary
-  //malloc obtains sizes for arrays in strArr
+ 
   strArr[0]=malloc(sizeof(char)*(dlmary[0]+1));
   strArr[0][dlmary[0]]='\0';
-  // copying first string;
+
   memcpy(strArr[0],str,sizeof(char)*dlmary[0]);
-  // printf("strArr[0]= |%s|\n",strArr[0]);
+
 
   for(i=1;i<(dnum);i++)
     {
       printf("\n");
       strArr[i]=malloc(sizeof(char)*(dlmary[i]-dlmary[i-1]));
+      memcpy(strArr[i],str+dlmary[i-1]+1,sizeof(char)*(dlmary[i]-dlmary[i-1]));
       strArr[i][dlmary[i]-dlmary[i-1]-1]='\0';
-      memcpy(strArr[i],str+dlmary[i-1]+1,sizeof(char)*(dlmary[i]-dlmary[i-1]-1));
-      // printf("strArr[%d]= |%s|\n",i,strArr[i]);
-      //printf("\n");
+
     }
-  strArr[dnum]=malloc(sizeof(char)*(*arrLen-dlmary[dnum-1]));
-  strArr[dnum][*arrLen-dlmary[dnum-1]-1]='\0';
-  memcpy(strArr[dnum],str+dlmary[dnum-1]+1,sizeof(char)*(*arrLen-dlmary[dnum-1]-1));
-  //printf("strArr[dnum]= |%s|\n",strArr[dnum]);
+  strArr[dnum]=malloc(sizeof(char)*(Len-dlmary[dnum-1]));
+  strArr[dnum][Len-dlmary[dnum-1]-1]='\0';
+
+  memcpy(strArr[dnum],str+dlmary[dnum-1]+1,sizeof(char)*(Len-dlmary[dnum-1]));
+
   free(dlmary);
   return strArr;
   }
@@ -165,11 +142,45 @@ char * implode(char * * strArr, int len, const char * glue)
     {
       new=strcat_ex(&new,&newlen,(const char*)strArr[i]); 
       new=strcat_ex(&new,&newlen,glue);      
-      printf("%s\n",new);
     }
       new=strcat_ex(&new,&newlen,(const char*)strArr[len-1]);
       return new;
 }
 
 
+void sortStringArray(char * * arrString, int len)
+{
+  qsort((const void**)arrString,len,sizeof(char*),comp2);
 
+}
+
+int comp2(const void* x,const void* y)
+{
+   char** s1 = (char**) x;
+   char** s2 = (char**) y;
+   return strcmp(*s1,*s2);
+}
+
+void sortStringCharacters(char * str)
+{
+  int len = strlen(str);
+  qsort((const void**)str,len,sizeof(char),compchar);
+}
+
+
+int compchar(const void* x,const void* y)
+{
+   char* c1 = (char*) x;
+   char* c2 = (char*) y;
+   return *c1-*c2;
+}
+
+void destroyStringArray(char * * strArr, int len)
+{
+  int i;
+  for(i=0;i<len;i++)
+    {
+      free(strArr[i]);
+    }
+  free(strArr);
+}
