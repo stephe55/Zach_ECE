@@ -6,20 +6,30 @@ int main(int argc,char ** argv)
 {
   FILE* fp;
   int ch;
-  if(argc<2)
+  char buffer[3000];
+
+  if((argc==1)&(stdin!=NULL))
     {
-      fprintf(stdout,"%s\n",argv[0]);
+      fgets(buffer,3000,stdin);
+      fputs(buffer,stdout);
       return EXIT_SUCCESS;
     }
+  
+  if(argc<2)
+    {
+      fprintf(stderr,"%s is only input\n",argv[0]);
+      return EXIT_SUCCESS;
+    }
+
   if(strcmp(argv[1],"--help")==0)
     {
-      fprintf(stdout,"<help-message>\nUsage: cat-lite [--help] [FILE]...\n");
+      fprintf(stdout,"Usage: cat-lite [--help] [FILE]...\n");
       fprintf(stdout,"With no FILE, or when FILE is -, read standard input.\n\n");    
       fprintf(stdout,"Examples:\n");
       fprintf(stdout,"  cat-lite README   Print the file README to standard output.\n");
       fprintf(stdout,"  cat-lite f - g    Print f's contents, then standard input, \n");
       fprintf(stdout,"                    then g's contents.\n");
-      fprintf(stdout,"  cat-lite          Copy standard input to standard output.\n<help-message>\n");
+      fprintf(stdout,"  cat-lite          Copy standard input to standard output.\n");
 	      return EXIT_SUCCESS;
     }
   int i=1;
@@ -46,9 +56,10 @@ int main(int argc,char ** argv)
 	  fclose(fp);
 	}
       else
-	{
-	  fprintf(stdout,"%s",argv[i]);
-	}
+  	{
+  	  fgets(buffer,3000,stdin);
+	  fputs(buffer,stdout);
+  	}
     }
        
   return EXIT_SUCCESS;
