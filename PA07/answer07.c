@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "answer07.h"
-#include "treefun.h"
+//#include "treefun.h"
 #define TRUE 1
 #define FALSE 0
 
@@ -53,20 +53,22 @@ void Stack_destroy(Stack * stack)
 int Stack_isEmpty(Stack * stack)
 {
   if(stack->head == NULL)
-    return FALSE;
-  else
     return TRUE;
+  else
+    return FALSE;
 }
 
 HuffNode * Stack_popFront(Stack * stack)
 {
-  HuffNode* y;
-  StackNode* tmpnode;
-  y=stack->head->tree;//set to item to be returned
-  tmpnode = stack->head->next;//set to next head
-  free(stack->head);//free current head
-  stack->head = tmpnode; //set head to next head
-  return y;//return item
+  if(Stack_isEmpty(stack)){
+    printf("returing null\n"); 
+    return NULL;
+  }
+  HuffNode* tree = (stack->head)->tree;
+  StackNode* tmp = stack->head;
+  stack->head = (stack->head)->next;
+  free(tmp);    
+  return tree;//return item    
 }
 
 void Stack_pushFront(Stack * stack, HuffNode * tree)
@@ -78,14 +80,15 @@ void Stack_pushFront(Stack * stack, HuffNode * tree)
 }
 
 void Stack_popPopCombinePush(Stack * stack)
-{
-  int num1 = stack->head->tree->value;
-  int num2 =  stack->head->next->tree->value;
-  int value = num1 + num2;
-  HuffNode* tree = HuffNode_create(value);
-  tree->left = Stack_popFront(stack);
-  tree->right = Stack_popFront(stack);
-  Stack_pushFront(stack, tree);
+{ 
+  // printf("sh->value = %d \n  shn->value = %d\n",stack->head->tree->value,stack->head->next->tree->value);
+  HuffNode* tree = Stack_popFront(stack);
+  HuffNode* tree2 = Stack_popFront(stack);
+  //printf("tree->value = %d \n  tree2->value = %d\n",tree->value,tree2->value);
+  HuffNode* root= HuffNode_create(tree->value + tree2->value);
+  root->left = tree2;
+  root->right = tree;
+  Stack_pushFront(stack,root);
 }
 
 HuffNode * HuffTree_readTextHeader(FILE * fp)
@@ -99,6 +102,7 @@ HuffNode * HuffTree_readTextHeader(FILE * fp)
   HuffNode* Hnode=NULL;
   Stack* stack= Stack_create();
   int ch = fgetc(fp);
+
   while(!feof(fp))
     {
       //conditions to deal with character
@@ -106,23 +110,82 @@ HuffNode * HuffTree_readTextHeader(FILE * fp)
 	{
 	  ch = fgetc(fp);
 	  Stack_pushFront(stack,HuffNode_create(ch));
-	  //Stack_print(fp, &stack);
 	}
-      else
+      else if(ch=='0')
 	{
-	  Stack_popPopCombinePush(stack);
-	  //Stack_print(fp, &stack);
+	  if((stack->head != NULL) && ((stack->head)->next!=NULL))
+		Stack_popPopCombinePush(stack);	 
+	  else if((stack->head != NULL) & ((stack->head)->next==NULL))
+	    break;
 	}
+            	
       //get next charcter
-      fgetc(fp);
+      ch =fgetc(fp);
     }
   Hnode = Stack_popFront(stack);
   Stack_destroy(stack);
-  fclose(fp);
+  //Hnode = (stack->head)->tree;
   return Hnode;
 }
 
-unsigned char * Huffman_applyTree(FILE * fp, HuffNode * tree, size_t * len)
+HuffNode * HuffTree_readBinaryHeader(FILE * fp)
 {
-  return NULL;
+  if(fp ==NULL)
+    {
+      fprintf(stderr,"fp=NULL");
+      return NULL;
+    }
+  HuffNode* Hnode=NULL;
+  Stack* stack = Stack_create();
+  unsigned char byte;
+  unsigned char result = 0;
+  int  shift = 7;
+  int ind=8;
+  int ind2;
+  size_t read;
+  while(!feof(fp))
+    {
+      //retrieve byte each 8 increments
+      if(ind == 8)
+	{
+	  read = fread(&byte,sizeof(char),1,fp); 
+	  ind=0;
+	}   
+      shift = 7-ind;
+      int bit = (byte >> shift) & 0x01;
+      if(bit==0)
+	{
+	  ind++;
+	  if((stack->head != NULL) && ((stack->head)->next!=NULL))
+	    Stack_popPopCombinePush(stack);	 
+	  else if((stack->head != NULL) & ((stack->head)->next==NULL))
+	    break;	  
+	}
+      if(bit==1)
+	{
+	  ind++;
+
+	  //for loop obtains the next 8 bits
+	  result = 0;
+	  for(ind2=7;ind2>=0;ind2--)
+	    {	      
+	      if(ind == 8)
+		{		    
+		  read = fread(&byte,sizeof(char),1,fp);//ind =0 shift 7  ind =7 shift 0
+		  ind = 0;
+		}
+	      shift = 7-ind;
+	      bit = (byte >>shift)  & 0x01;
+	      bit =  bit << (ind2);
+	      result = result | bit;
+	      bit = 0;
+	      ind++; 		    
+	    }
+	  Stack_pushFront(stack,HuffNode_create(result));	      
+	  //need to push next 8bit character onto front of stack
+	}      	
+    }
+  Hnode = Stack_popFront(stack);
+  Stack_destroy(stack);
+  return Hnode;
 }
